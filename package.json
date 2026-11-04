@@ -1,0 +1,103 @@
+{
+    "name": "pptb-servicebus-explorer",
+    "version": "1.0.0",
+    "displayName": "ServiceBus Explorer for Dataverse",
+    "description": "Explore Azure Service Bus queues, topics, subscriptions and filters next to the Dataverse steps that send messages to them. Check every service endpoint against Azure, edit the trigger and images of the steps, enable or disable them in bulk, and peek the active messages each step sent.",
+    "main": "index.html",
+    "icon": "icon/servicebus-explorer.svg",
+    "author": "Hamza AMRAOUI",
+    "license": "MIT",
+    "contributors": [
+        {
+            "name": "Hamza AMRAOUI",
+            "url": "https://www.linkedin.com/in/hamza-amraoui/"
+        }
+    ],
+    "configurations": {
+        "repository": "https://github.com/AmraouiH/ServiceBusExplorer-PPTB",
+        "website": "https://github.com/AmraouiH/ServiceBusExplorer-PPTB",
+        "readmeUrl": "https://raw.githubusercontent.com/AmraouiH/ServiceBusExplorer-PPTB/main/README.md"
+    },
+    "features": {
+        "connections": 1,
+        "minAPI": "1.2.7"
+    },
+    "cspExceptions": {
+        "connect-src": [
+            {
+                "domain": "https://*.servicebus.windows.net",
+                "exceptionReason": "Reads the queues, topics, subscriptions and filters of your Service Bus namespaces (management endpoint, shared access key)."
+            },
+            {
+                "domain": "wss://*.servicebus.windows.net",
+                "exceptionReason": "Peeks the active messages of a queue or subscription over AMQP on WebSockets. Messages are only read, never locked or removed."
+            },
+            {
+                "domain": "https://management.azure.com",
+                "exceptionReason": "Reads the namespaces and their entities through Azure Resource Manager when you sign in with a Microsoft account."
+            },
+            {
+                "domain": "https://login.microsoftonline.com",
+                "exceptionReason": "Microsoft account sign-in (device code) to get the Azure tokens, which stay in memory."
+            }
+        ]
+    },
+    "keywords": [
+        "powerplatform",
+        "dataverse",
+        "dynamics365",
+        "servicebus",
+        "azure",
+        "serviceendpoint",
+        "toolbox"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/AmraouiH/ServiceBusExplorer-PPTB.git"
+    },
+    "bugs": {
+        "url": "https://github.com/AmraouiH/ServiceBusExplorer-PPTB/issues"
+    },
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "scripts": {
+        "build": "tsc && vite build",
+        "dev": "vite",
+        "watch": "vite build --watch",
+        "dev-watch": "vite build --mode development --watch",
+        "preview": "vite preview",
+        "finalize-package": "npm shrinkwrap",
+        "validate": "pptb-validate",
+        "version-stable": "npm version patch --no-git-tag-version",
+        "publish-package": "npm run build && npm run version-stable && npm publish --access public",
+        "test:logic": "tsx tests/logic/run.mts",
+        "test:emulator": "tsx tests/emulator/run.mts",
+        "test:e2e": "node tests/e2e/run.cjs"
+    },
+    "dependencies": {
+        "@azure/service-bus": "^7.9.5",
+        "@fluentui/react-components": "^9.72.7",
+        "@fluentui/react-icons": "^2.0.314",
+        "buffer": "^6.0.3",
+        "fflate": "^0.8.2",
+        "react": "^18.3.1",
+        "react-dom": "^18.3.1"
+    },
+    "devDependencies": {
+        "@pptb/types": "^1.2.7",
+        "@types/node": "^22.10.0",
+        "@types/react": "^18.3.12",
+        "@types/react-dom": "^18.3.1",
+        "@vitejs/plugin-react": "^4.3.4",
+        "@xmldom/xmldom": "^0.9.12",
+        "playwright-core": "^1.48.2",
+        "tsx": "^4.19.2",
+        "typescript": "^5.6.3",
+        "vite": "^7.1.11"
+    },
+    "files": [
+        "dist",
+        "npm-shrinkwrap.json"
+    ]
+}
