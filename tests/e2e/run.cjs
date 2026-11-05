@@ -438,6 +438,7 @@ async function run() {
             await page.fill('.sb-match-search input', 'invoice');
             assertEqual(await rowsOf(page, '.sb-matching-grid').count(), 1, 'search');
             await page.fill('.sb-match-search input', '');
+            await shot(page, '05-matching');
             await rowsOf(page, '.sb-matching-grid').filter({ hasText: 'Account events' }).dblclick();
             assertEqual(await detailTitle(page), 'crm-account-events', 'double-click opens the entity in the explorer');
             await shot(page, '06-matching');
@@ -818,8 +819,10 @@ async function run() {
         });
 
         await test('Help, links and dark theme', async (page) => {
-            await open(page, { __mockTheme: 'dark' });
+            await loaded(page, { __mockTheme: 'dark' });
             assert(await page.locator('.sb-theme-dark').count(), 'dark class');
+            await node(page, 'marketing-platform');
+            await shot(page, '13-explorer-dark');
             const background = await page.evaluate(() => getComputedStyle(document.querySelector('.sb-card')).backgroundColor);
             assert(background !== 'rgb(255, 255, 255)', 'dark cards, got ' + background);
             // Marketplace policy: one external link (the author), the tool icon is a vector that follows the theme

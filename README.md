@@ -1,3 +1,5 @@
+<img src="https://raw.githubusercontent.com/AmraouiH/ServiceBusExplorer-PPTB/main/public/icon/servicebus-explorer.svg" alt="" width="72" height="72">
+
 # ServiceBus Explorer for Dataverse (Power Platform ToolBox)
 
 ServiceBus Explorer for [Power Platform ToolBox](https://www.powerplatformtoolbox.com/) is the web version of the ServiceBus Explorer XrmToolBox plugin. It shows your **Azure Service Bus** namespaces next to the **Dynamics 365 / Dataverse steps** that send messages to them:
@@ -22,11 +24,29 @@ The tool **only reads Azure**: it never changes a queue, a topic, a filter or a 
 
 Demo data from the end-to-end tests.
 
+**Explorer**: a subscription with the Dataverse steps that feed it.
+
 ![Explorer: a subscription with the Dataverse steps that feed it](https://raw.githubusercontent.com/AmraouiH/ServiceBusExplorer-PPTB/main/docs/screenshots/explorer.png)
+
+**Matching**: every service endpoint checked against what exists on Azure.
+
+![Matching: every service endpoint with its status on Azure](https://raw.githubusercontent.com/AmraouiH/ServiceBusExplorer-PPTB/main/docs/screenshots/matching.png)
+
+**Messages of a step**: active messages decoded from .NETBinary and linked to the step that sent them.
 
 ![Messages of a step, decoded from .NETBinary and linked to the step that sent them](https://raw.githubusercontent.com/AmraouiH/ServiceBusExplorer-PPTB/main/docs/screenshots/step-messages.png)
 
+**Before a write**: the review of the step editor names the environment, warns about deleted images and offers a backup.
+
 ![Review before a write: target environment, deleted images, backup](https://raw.githubusercontent.com/AmraouiH/ServiceBusExplorer-PPTB/main/docs/screenshots/review.png)
+
+**Bulk disable**: the same environment, no-undo notice and backup, here after the backup was saved.
+
+![Bulk disable confirmation with the backup saved](https://raw.githubusercontent.com/AmraouiH/ServiceBusExplorer-PPTB/main/docs/screenshots/bulk-confirmation.png)
+
+**Dark theme**: the tool follows the theme of the ToolBox.
+
+![Explorer in the dark theme](https://raw.githubusercontent.com/AmraouiH/ServiceBusExplorer-PPTB/main/docs/screenshots/explorer-dark.png)
 
 ## What this tool changes
 
@@ -63,7 +83,7 @@ ServiceBus Explorer - PPTB/
 ├── package.json                 Tool manifest: displayName, icon, features, cspExceptions (Azure hosts)…
 ├── index.html                   Vite entry point (main = index.html in dist)
 ├── vite.config.ts               IIFE bundle + HTML fix-up for the ToolBox iframe
-├── public/icon/                 Tool icon: vector SVG in currentColor, follows the light and dark themes (copied to dist/icon)
+├── public/icon/                 Tool icon: vector SVG, blue gradient tile readable on light and dark themes (copied to dist/icon)
 ├── src/
 │   ├── App.tsx                  UI orchestration: load, tree, pages, steps, messages, export, busy overlay with Stop
 │   ├── index.css, theme.ts      Azure blue theme, follows the ToolBox light/dark theme

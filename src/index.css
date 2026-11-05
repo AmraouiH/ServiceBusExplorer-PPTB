@@ -91,7 +91,6 @@ body {
     width: 32px;
     height: 32px;
     flex: none;
-    color: #fff;
 }
 
 .sb-title {
@@ -828,7 +827,6 @@ body {
 .sb-busy-logo {
     width: 44px;
     height: 44px;
-    color: var(--colorBrandForeground1);
     animation: sb-pulse 1.6s ease-in-out infinite;
 }
 
