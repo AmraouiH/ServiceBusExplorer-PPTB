@@ -166,7 +166,7 @@ npm run test:emulator   # the real AMQP peek against the Service Bus emulator
 ## AI Assistance
 
 A substantial part of the code, the tests and this documentation was written with an AI coding assistant (Claude Code, by Anthropic).
-The author has tested the tool manually; feedback is welcome.
+The author has tested the tool manually; feedback is welcome. See the [AI-Assisted Development policy](https://docs.powerplatformtoolbox.com/policies/ai-assisted-development).
 
 ## Credits
 
