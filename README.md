@@ -166,7 +166,7 @@ npm run test:emulator   # the real AMQP peek against the Service Bus emulator
 ## AI Assistance
 
 A substantial part of the code, the tests and this documentation was written with an AI coding assistant (Claude Code, by Anthropic).
-Manual tests are already done by the author, don't hesitate to share your feedback.
+The author has tested the tool manually; feedback is welcome.
 
 ## Credits
 
