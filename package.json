@@ -1,6 +1,6 @@
 {
     "name": "pptb-servicebus-explorer",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "displayName": "ServiceBus Explorer for Dataverse",
     "description": "Explore Azure Service Bus queues, topics, subscriptions and filters next to the Dataverse steps that send messages to them. Check every service endpoint against Azure, edit the trigger and images of the steps, enable or disable them in bulk, and peek the active messages each step sent.",
     "main": "index.html",

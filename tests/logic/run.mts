@@ -21,7 +21,7 @@ const rules = await import('../../src/services/stepRules');
 const { duration, size, parseDuration } = await import('../../src/services/format');
 const { decodeMessage, FormatBinary, FormatJson, FormatXml, FormatText, FormatRaw } = await import('../../src/services/messageDecoder');
 const { decodeNbfx, serialize } = await import('../../src/services/nbfx');
-const { exportModel } = await import('../../src/services/exportService');
+const { exportBackup, exportModel } = await import('../../src/services/exportService');
 const { readMessages, resolveSteps, sourcesOf, pathOf } = await import('../../src/services/messageService');
 const types = await import('../../src/models/types');
 
@@ -383,7 +383,7 @@ await run('export', () => {
     const q = types.newEntity('queue', 'q1', a, { activeMessages: 3 });
     a.queues.push(q);
     const e = endpoint('Account <events>', 2, a.host, 'q1');
-    const s = stepOn(e, { name: 'Update of account' });
+    const s = stepOn(e, { name: 'Update of account', id: '6f1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d' });
     s.images.push({ id: 'i', name: 'img', alias: 'PreImage', imageType: 0, attributes: 'name' });
     const zip = unzipSync(exportModel(buildModel([a], [e], [s]), en));
     same('six sheets', 6, Object.keys(zip).filter((k) => k.startsWith('xl/worksheets/sheet')).length);
@@ -391,6 +391,17 @@ await run('export', () => {
     check('escaped text', first.includes('Account &lt;events&gt;'));
     check('numbers stay numbers', /<c r="I2"><v>3<\/v><\/c>/.test(first));
     check('workbook lists the sheets', strFromU8(zip['xl/workbook.xml']).includes('name="Queues and topics"'));
+
+    // Backup before a write: environment, then every value the tool can change, with the ids
+    const backup = unzipSync(exportBackup([s], 'Environment: Contoso (https://contoso.crm.dynamics.com)', new Date('2026-11-05T10:00:00Z'), en));
+    same('backup: three sheets', 3, Object.keys(backup).filter((k) => k.startsWith('xl/worksheets/sheet')).length);
+    check('backup: sheet names', /name="Backup".*name="Steps".*name="Images"/s.test(strFromU8(backup['xl/workbook.xml'])));
+    const info = strFromU8(backup['xl/worksheets/sheet1.xml']);
+    check('backup: environment and date', info.includes('Contoso (https://contoso.crm.dynamics.com)') && info.includes('2026-11-05T10:00:00.000Z'));
+    const stepsSheet = strFromU8(backup['xl/worksheets/sheet2.xml']);
+    check('backup: step id and name', stepsSheet.includes(s.id) && stepsSheet.includes('Update of account'));
+    const imagesSheet = strFromU8(backup['xl/worksheets/sheet3.xml']);
+    check('backup: image with its id and step id', imagesSheet.includes('>i<') && imagesSheet.includes(s.id) && imagesSheet.includes('PreImage'));
 });
 
 console.log(`${passed} checks passed, ${failures.length} failed`);

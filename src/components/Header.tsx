@@ -1,11 +1,11 @@
 import { Button, Menu, MenuItemRadio, MenuList, MenuPopover, MenuTrigger, Tooltip } from '@fluentui/react-components';
-import { ArrowDownloadRegular, CloudRegular, GlobeRegular, HeartFilled, PersonRegular, PlayFilled, QuestionCircleRegular, SettingsRegular } from '@fluentui/react-icons';
-import logo from '../assets/logo.png';
+import { ArrowDownloadRegular, CloudRegular, GlobeRegular, PersonRegular, PlayFilled, QuestionCircleRegular, SettingsRegular } from '@fluentui/react-icons';
 import { useStrings } from '../i18n/I18nContext';
 import { AppTitle, AuthorName, type Language } from '../i18n/strings';
+import { AppIcon } from './AppIcon';
 
+/** The only external link of the tool (marketplace policy: one unobtrusive link). */
 const LinkedInUrl = 'https://www.linkedin.com/in/hamza-amraoui/';
-const DonateUrl = 'https://www.paypal.com/paypalme/EntityFieldsAnalyser';
 
 /** Opens an external page (falls back to the connection browser when the host blocks window.open). */
 export async function openUrl(url: string) {
@@ -38,7 +38,7 @@ export function Header(props: HeaderProps) {
     return (
         <header className="sb-header">
             <div className="sb-brand">
-                <img src={logo} alt="" className="sb-logo" />
+                <AppIcon className="sb-logo" />
                 <div>
                     <div className="sb-title">{AppTitle}</div>
                     <div className="sb-subtitle">{strings.appSubtitle}</div>
@@ -90,9 +90,6 @@ export function Header(props: HeaderProps) {
                 </Button>
                 <Button appearance="transparent" className="sb-header-button" icon={<PersonRegular />} title={strings.authorTip} onClick={() => openUrl(LinkedInUrl)}>
                     {AuthorName}
-                </Button>
-                <Button appearance="transparent" className="sb-header-button" icon={<HeartFilled className="sb-heart" />} title={strings.donateTip} onClick={() => openUrl(DonateUrl)}>
-                    {strings.donate}
                 </Button>
             </div>
         </header>

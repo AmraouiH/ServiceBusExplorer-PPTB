@@ -28,6 +28,7 @@ import { errorMessage } from '../services/dataverse';
 import { loadColumns, loadTables } from '../services/endpointService';
 import { allowedImageTypes, describe, normalizeColumns, supportsFilteringAttributes, supportsImages, validate } from '../services/stepRules';
 import { Card } from './Common';
+import { WriteSafety, type WriteTarget } from './Dialogs';
 
 const Stages = [StepStage.PreValidation, StepStage.PreOperation, StepStage.PostOperation];
 const Modes = [StepMode.Synchronous, StepMode.Asynchronous];
@@ -40,6 +41,8 @@ export interface EditorState {
 
 interface StepEditorProps {
     state: EditorState | null;
+    /** Environment, warning and backup shown in the review before the write. */
+    writeTarget: (original: StepInfo, deletedImages: number) => WriteTarget;
     onCancel: () => void;
     /** The reviewed change: the app writes it. */
     onSave: (original: StepInfo, draft: StepInfo, lines: string[]) => void;
@@ -64,7 +67,7 @@ function StepEditorBody(props: StepEditorProps & { state: EditorState }) {
     const [imageEditor, setImageEditor] = useState<{ image: ImageInfo; index: number; allowed: number[] } | null>(null);
     const [picker, setPicker] = useState(false);
     const [selectedImage, setSelectedImage] = useState<number | null>(null);
-    const [review, setReview] = useState<string[] | null>(null);
+    const [review, setReview] = useState<{ lines: string[]; target: WriteTarget } | null>(null);
     const latestMessage = useRef(original.messageId);
 
     const selectedTable = (text: string) => (!text || text === s.allTables ? null : text.trim());
@@ -146,7 +149,9 @@ function StepEditorBody(props: StepEditorProps & { state: EditorState }) {
             setError(s.noChanges);
             return;
         }
-        setReview(lines);
+        // Same rule as saveStep: an image of the original that is no longer in the draft is deleted.
+        const deleted = original.images.filter((i) => !draft.images.some((x) => x.id === i.id)).length;
+        setReview({ lines, target: props.writeTarget(original, deleted) });
     };
 
     return (
@@ -384,15 +389,16 @@ function StepEditorBody(props: StepEditorProps & { state: EditorState }) {
                         <DialogContent className="sb-form">
                             <div>{s.reviewMessage(original.name)}</div>
                             <div className="sb-lines">
-                                {review?.map((line, i) => (
+                                {review?.lines.map((line, i) => (
                                     <div key={i}>•  {line}</div>
                                 ))}
                             </div>
+                            {review && <WriteSafety target={review.target} />}
                             <div className="sb-strong">{s.reviewQuestion}</div>
                         </DialogContent>
                         <DialogActions>
                             <Button onClick={() => setReview(null)}>{s.cancel}</Button>
-                            <Button appearance="primary" className="sb-review-save" onClick={() => review && props.onSave(original, draft, review)}>
+                            <Button appearance="primary" className="sb-review-save" onClick={() => review && props.onSave(original, draft, review.lines)}>
                                 {s.save}
                             </Button>
                         </DialogActions>

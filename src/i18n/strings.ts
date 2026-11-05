@@ -52,8 +52,6 @@ function build(fr: boolean) {
         options: T('Options', 'Options'),
         languageMenu: T('Language', 'Langue'),
         help: T('Help', 'Aide'),
-        donate: T('Donate', 'Faire un don'),
-        donateTip: T('Support the tool (PayPal)', 'Soutenir l’outil (PayPal)'),
         authorTip: T('Developed by Hamza AMRAOUI (LinkedIn)', 'Développé par Hamza AMRAOUI (LinkedIn)'),
         connectedTo: (name: string) => T(`Connected to ${name}`, `Connecté à ${name}`),
         notConnected: T('No Dataverse connection', 'Aucune connexion Dataverse'),
@@ -311,6 +309,22 @@ function build(fr: boolean) {
         bulkDone: (count: number) => T(`${count} step(s) updated.`, `${count} step(s) mis à jour.`),
         bulkFailed: (done: number, total: number) => T(`${done} of ${total} step(s) updated before the error.`, `${done} step(s) sur ${total} mis à jour avant l’erreur.`),
         stepSaved: (name: string) => T(`${name} was saved.`, `${name} a été enregistré.`),
+        targetEnvironment: (name: string, url: string) => {
+            const target = name && url ? `${name} (${url})` : name || url || T('unknown', 'inconnu');
+            return T(`Environment: ${target}`, `Environnement : ${target}`);
+        },
+        noUndo: T(
+            'Changes are written to Dataverse right away and can’t be undone from this tool. Save a backup first to keep the current state.',
+            'Les changements sont écrits tout de suite dans Dataverse et ne peuvent pas être annulés depuis l’outil. Enregistrez une sauvegarde avant pour garder l’état actuel.',
+        ),
+        imagesDeleted: (count: number) =>
+            T(
+                `${count} image(s) will be deleted from Dataverse. Save a backup first if you may need them again.`,
+                `${count} image(s) seront supprimée(s) de Dataverse. Enregistrez une sauvegarde avant si vous pouvez en avoir besoin.`,
+            ),
+        saveBackup: T('Save a backup (Excel)', 'Enregistrer une sauvegarde (Excel)'),
+        backupSaved: (path: string) => T(`Backup saved: ${path}`, `Sauvegarde enregistrée : ${path}`),
+        backupFailed: (error: string) => T(`The backup could not be saved: ${error}`, `La sauvegarde n’a pas pu être enregistrée : ${error}`),
         // #endregion
 
         // #region Step editor
@@ -545,6 +559,14 @@ function build(fr: boolean) {
         sheetEntities: T('Queues and topics', 'Queues et topics'),
         sheetSubscriptions: T('Subscriptions', 'Souscriptions'),
         sheetRules: T('Filters', 'Filtres'),
+        sheetBackup: T('Backup', 'Sauvegarde'),
+        colEnvironment: T('Environment', 'Environnement'),
+        colSavedAt: T('Saved at', 'Enregistré le'),
+        colStepId: T('Step ID', 'ID du step'),
+        colImageId: T('Image ID', 'ID de l’image'),
+        colDescription: 'Description',
+        colDeleteJob: T('Delete job on success', 'Supprimer le job si succès'),
+        colMessageProperty: T('Message property', 'Propriété du message'),
         colTopic: 'Topic',
         colScheduled: T('Scheduled', 'Planifiés'),
         colSize: T('Size (bytes)', 'Taille (octets)'),

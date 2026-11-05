@@ -1,6 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
-import { Button, Checkbox, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Field, Input, SpinButton } from '@fluentui/react-components';
-import { CopyRegular, OpenRegular } from '@fluentui/react-icons';
+import {
+    Button,
+    Checkbox,
+    Dialog,
+    DialogActions,
+    DialogBody,
+    DialogContent,
+    DialogSurface,
+    DialogTitle,
+    Field,
+    Input,
+    MessageBar,
+    MessageBarBody,
+    SpinButton,
+} from '@fluentui/react-components';
+import { ArrowDownloadRegular, CopyRegular, OpenRegular } from '@fluentui/react-icons';
 import { useStrings } from '../i18n/I18nContext';
 import { MaxMessagesLimit, type MessageBatch, type PluginSettings } from '../models/types';
 import type { DeviceCodePrompt } from '../services/azure/tokens';
@@ -53,7 +67,55 @@ export interface ConfirmState {
     question: string;
     action: string;
     intent?: 'info' | 'warning';
+    /** Writes to Dataverse: the target environment, the no-undo notice and the backup button are shown. */
+    write?: WriteTarget;
     onConfirm: () => void;
+}
+
+export interface WriteTarget {
+    /** Name and URL of the Dataverse environment that will be changed. */
+    environment: string;
+    /** Extra warning, e.g. images that will be deleted. */
+    warning?: string;
+    /** Saves the current state of what will change; returns the saved path, or null when the user cancels. */
+    backup: () => Promise<string | null>;
+}
+
+/** Target environment, no-undo notice and backup button of every confirmation that writes to Dataverse. */
+export function WriteSafety(props: { target: WriteTarget }) {
+    const s = useStrings();
+    const [status, setStatus] = useState<{ text: string; ok: boolean } | null>(null);
+    const [saving, setSaving] = useState(false);
+
+    const backup = async () => {
+        setSaving(true);
+        try {
+            const path = await props.target.backup();
+            if (path) setStatus({ text: s.backupSaved(path), ok: true });
+        } catch (error) {
+            setStatus({ text: s.backupFailed(errorMessage(error)), ok: false });
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return (
+        <div className="sb-write-safety">
+            <div className="sb-strong sb-target-environment">{props.target.environment}</div>
+            {props.target.warning && (
+                <MessageBar intent="warning" className="sb-write-warning">
+                    <MessageBarBody>{props.target.warning}</MessageBarBody>
+                </MessageBar>
+            )}
+            <div className="sb-no-undo">{s.noUndo}</div>
+            <div className="sb-backup-row">
+                <Button size="small" className="sb-save-backup" icon={<ArrowDownloadRegular />} disabled={saving} onClick={backup}>
+                    {s.saveBackup}
+                </Button>
+                {status && <span className={status.ok ? 'sb-backup-status' : 'sb-backup-status sb-backup-error'}>{status.text}</span>}
+            </div>
+        </div>
+    );
 }
 
 /** Question with the list of what will change (bulk enable / disable, review of a step). */
@@ -74,6 +136,7 @@ export function ConfirmDialog(props: { confirm: ConfirmState | null; onClose: ()
                                 ))}
                             </div>
                         )}
+                        {c?.write && <WriteSafety key={c.title + c.text} target={c.write} />}
                         <div className="sb-strong">{c?.question}</div>
                     </DialogContent>
                     <DialogActions>

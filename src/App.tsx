@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Checkbox, FluentProvider, Input, Tab, TabList, Tooltip } from '@fluentui/react-components';
 import { AddRegular, CloudRegular, PlayRegular, SearchRegular, TargetRegular } from '@fluentui/react-icons';
-import logo from './assets/logo.png';
+import { AppIcon } from './components/AppIcon';
 import { Badge, Card } from './components/Common';
 import { ConnectionsDialog } from './components/ConnectionsDialog';
 import {
@@ -15,6 +15,7 @@ import {
     type MessageState,
     type StepMessagesState,
     type TextState,
+    type WriteTarget,
 } from './components/Dialogs';
 import { ExplorerDetail, type DetailTab } from './components/ExplorerDetail';
 import { Header } from './components/Header';
@@ -31,7 +32,7 @@ import { loadNamespace } from './services/azure/readers';
 import { DeviceCodeUi, type DeviceCodePrompt } from './services/azure/tokens';
 import { errorMessage } from './services/dataverse';
 import { loadEndpoints, loadMessages, loadSteps, loadTables, resetCaches, saveStep, setEnabled } from './services/endpointService';
-import { exportModel } from './services/exportService';
+import { exportBackup, exportModel } from './services/exportService';
 import { buildModel, isProblem } from './services/matching';
 import { readMessages, resolveSteps, sourcesOf, targetOfStep } from './services/messageService';
 import { darkTheme, lightTheme } from './theme';
@@ -268,6 +269,26 @@ function App() {
 
     // #region Steps
 
+    /** File name with the local date and time, e.g. "ServiceBus Explorer backup 2026-11-05 10-42.xlsx". */
+    const stampedName = (prefix: string) => {
+        const now = new Date();
+        const pad = (n: number) => String(n).padStart(2, '0');
+        return `${prefix} ${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}-${pad(now.getMinutes())}.xlsx`;
+    };
+
+    const saveWorkbook = (name: string, bytes: Uint8Array) => window.toolboxAPI.fileSystem.saveFile(name, bytes, [{ name: 'Excel', extensions: ['xlsx'] }]);
+
+    /** Environment named in the confirmation, and the backup of the steps as they are now. */
+    const writeTarget = (steps: StepInfo[], warning?: string): WriteTarget => {
+        const s = stringsRef.current;
+        const environment = s.targetEnvironment(connection?.name ?? '', connection?.url ?? '');
+        return {
+            environment,
+            warning,
+            backup: () => saveWorkbook(stampedName(`${AppTitle} backup`), exportBackup(steps, environment, new Date(), s)),
+        };
+    };
+
     const editStep = async (step: StepInfo) => {
         if (!(await requireDataverse())) return;
         const s = stringsRef.current;
@@ -314,6 +335,7 @@ function App() {
             question: s.confirmBulkQuestion,
             action: s.apply,
             intent: enable ? 'info' : 'warning',
+            write: writeTarget(targets),
             onConfirm: async () => {
                 let done = 0;
                 let failed = false;
@@ -408,10 +430,7 @@ function App() {
             return;
         }
         try {
-            const now = new Date();
-            const pad = (n: number) => String(n).padStart(2, '0');
-            const name = `ServiceBus Explorer ${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}-${pad(now.getMinutes())}.xlsx`;
-            const path = await window.toolboxAPI.fileSystem.saveFile(name, exportModel(model, s), [{ name: 'Excel', extensions: ['xlsx'] }]);
+            const path = await saveWorkbook(stampedName(AppTitle), exportModel(model, s));
             if (path) setMessage({ title: s.exportDoneTitle, text: s.exportDone(path), intent: 'success' });
         } catch (error) {
             showError(error);
@@ -552,7 +571,12 @@ function App() {
                         {page === 'steps' && <StepsPage model={model} busy={!!busy} onMessages={showStepMessages} {...stepActions} />}
                     </main>
 
-                    <StepEditor state={editor} onCancel={() => setEditor(null)} onSave={(original, draft) => saveEditedStep(original, draft)} />
+                    <StepEditor
+                        state={editor}
+                        writeTarget={(original, deletedImages) => writeTarget([original], deletedImages > 0 ? strings.imagesDeleted(deletedImages) : undefined)}
+                        onCancel={() => setEditor(null)}
+                        onSave={(original, draft) => saveEditedStep(original, draft)}
+                    />
                     <StepMessagesDialog state={stepMessages} onClose={() => setStepMessages(null)} onShowText={(title, subtitle, body) => setText({ title, subtitle, text: body })} />
                     <ConnectionsDialog
                         open={!!connectionsOpen}
@@ -574,7 +598,7 @@ function App() {
                     {busy && (
                         <div className="sb-busy" role="status" aria-live="polite">
                             <div className="sb-busy-box">
-                                <img src={logo} alt="" className="sb-busy-logo" />
+                                <AppIcon className="sb-busy-logo" />
                                 <div className="sb-busy-title">{busy.title}</div>
                                 {busy.text && <div className="sb-busy-text">{busy.text}</div>}
                                 <div className="sb-busy-elapsed">{Math.floor((Date.now() - busy.started) / 1000)} s</div>

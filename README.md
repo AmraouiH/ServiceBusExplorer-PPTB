@@ -16,7 +16,43 @@ ServiceBus Explorer for [Power Platform ToolBox](https://www.powerplatformtoolbo
 | **Messages** | Peek of the **active messages** of a queue, topic or subscription, or of one step, each linked to the **step that sent it** (the `OwningExtension` of its Dataverse context) whatever the format of the endpoint: JSON, XML or .NETBinary. The dead-letter queue is not read. Nothing is locked or removed, and the delivery count does not change. |
 | **Export** | One `.xlsx` workbook with the matching, the steps, the images, the entities, the subscriptions and the filters, saved through the ToolBox. |
 
-The tool **only reads Azure**: it never changes a queue, a topic, a filter or a message. It only writes steps and step images in Dataverse. Nothing is read until you click **Load**.
+The tool **only reads Azure**: it never changes a queue, a topic, a filter or a message. It only writes steps and step images in Dataverse, and only after a confirmation (see [What this tool changes](#what-this-tool-changes)). Nothing is read until you click **Load**.
+
+## Screenshots
+
+Demo data from the end-to-end tests.
+
+![Explorer: a subscription with the Dataverse steps that feed it](https://raw.githubusercontent.com/AmraouiH/ServiceBusExplorer-PPTB/main/docs/screenshots/explorer.png)
+
+![Messages of a step, decoded from .NETBinary and linked to the step that sent them](https://raw.githubusercontent.com/AmraouiH/ServiceBusExplorer-PPTB/main/docs/screenshots/step-messages.png)
+
+![Review before a write: target environment, deleted images, backup](https://raw.githubusercontent.com/AmraouiH/ServiceBusExplorer-PPTB/main/docs/screenshots/review.png)
+
+## What this tool changes
+
+**In Dataverse**, and only after you confirm a dialog that names the target environment (connection name and URL):
+
+| Record | What is written |
+|---|---|
+| Step (`sdkmessageprocessingstep`) | Trigger (message and table), stage, mode, rank, filtering columns, name, description, "delete the system job on success". Only the values you changed are sent. |
+| Step image (`sdkmessageprocessingstepimage`) | Images **created**, **updated** (type, alias, name, columns) and **deleted**. A removed image is deleted from Dataverse. |
+| Step state | **Enable** and **disable**, one step or many. |
+
+- **No undo.** Changes are written right away and can't be undone from the tool. Both confirmations (step editor review, bulk enable / disable) have a **Save a backup (Excel)** button: it saves the steps that will change and their images as they are now, with their ids, so you can put them back by hand. The **Export** button saves the full report at any time.
+- **Managed steps**: a step from a managed solution that is customizable can be changed, and the change creates an **unmanaged layer** above it. A managed step that is not customizable is read-only.
+- **Nothing else** is written: no service endpoint, no plug-in assembly, no solution.
+
+**In Azure, nothing.** Namespaces, queues, topics, subscriptions and rules are only read. Messages are only peeked: nothing is locked, received or removed, and the delivery count does not change.
+
+## How it differs from Plugin Registration
+
+Plugin Registration registers and edits SDK message processing steps and service endpoints from the Dataverse side. It does not look at Azure. This tool is about the Azure side of those endpoints:
+
+- **Azure namespace exploration**: queues, topics, subscriptions, SQL and correlation filters, rule actions, message counters, with the Dataverse steps that send to each of them.
+- **Endpoint ↔ entity matching**: every service endpoint checked against what exists on Azure (*Linked*, *Missing on Azure*, *Wrong type*, *No steps*, *No endpoint*…).
+- **Message peek linked to the sending step**: the active messages of a queue, topic or subscription, decoded (JSON, XML, .NETBinary) and linked to the step that sent them.
+
+The step editor is deliberately small. It fixes a step from the place where you find the problem (a filter that never matches, an image too large for the queue). For full registration work (assemblies, plug-ins, new endpoints), use Plugin Registration.
 
 ## Project structure
 
@@ -27,7 +63,7 @@ ServiceBus Explorer - PPTB/
 ├── package.json                 Tool manifest: displayName, icon, features, cspExceptions (Azure hosts)…
 ├── index.html                   Vite entry point (main = index.html in dist)
 ├── vite.config.ts               IIFE bundle + HTML fix-up for the ToolBox iframe
-├── public/icon/                 Tool icon: the "AH" logo embedded in an SVG (copied to dist/icon)
+├── public/icon/                 Tool icon: vector SVG in currentColor, follows the light and dark themes (copied to dist/icon)
 ├── src/
 │   ├── App.tsx                  UI orchestration: load, tree, pages, steps, messages, export, busy overlay with Stop
 │   ├── index.css, theme.ts      Azure blue theme, follows the ToolBox light/dark theme
@@ -126,6 +162,18 @@ npm run test:emulator   # the real AMQP peek against the Service Bus emulator
 - **Messages**: only the active messages are read, never the dead-letter queue. A message already taken by a consumer is no longer visible. Session-enabled queues are not supported by the peek.
 - **Emulator**: the Service Bus emulator does not accept WebSockets: its messages can only be read by the Node tests, not from the ToolBox.
 - **Binary bodies**: a .NETBinary body written with a dictionary shows its dictionary strings as `dict_N` (Dataverse writes without one).
+
+## AI Assistance
+
+A substantial part of the code, the tests and this documentation was written with an AI coding assistant (Claude Code, by Anthropic), under the direction of the author, who is responsible for it. The tool is checked by the automated tests described above: logic, the Service Bus emulator, and end-to-end tests in a headless browser. See the [AI-Assisted Development policy](https://docs.powerplatformtoolbox.com/policies/ai-assisted-development).
+
+## Credits
+
+Port of the [ServiceBus Explorer XrmToolBox plugin](https://github.com/AmraouiH/ServiceBusExplorer) by Hamza AMRAOUI.
+
+## Support
+
+If the tool helps you, you can support its development on [PayPal](https://www.paypal.com/paypalme/EntityFieldsAnalyser). Bugs and ideas: [GitHub issues](https://github.com/AmraouiH/ServiceBusExplorer-PPTB/issues).
 
 ## License
 

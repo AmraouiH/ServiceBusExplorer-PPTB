@@ -1,6 +1,6 @@
 import { strToU8, zipSync } from 'fflate';
 import type { Strings } from '../i18n/strings';
-import { allColumns, allSubscriptions, entities, type ExplorerModel } from '../models/types';
+import { allColumns, allSubscriptions, entities, type ExplorerModel, type StepInfo } from '../models/types';
 
 /**
  * Excel report: the matching, the steps and images, the Azure entities and their filters (port of ExportService.cs).
@@ -88,6 +88,63 @@ export function buildWorkbook(sheets: Sheet[]): Uint8Array {
     };
     sheets.forEach((s, i) => (files[`xl/worksheets/sheet${i + 1}.xml`] = strToU8(sheetXml(s))));
     return zipSync(files, { level: 6 });
+}
+
+/**
+ * Backup of steps before a write: every value the tool can change, with the ids, so a step and its images
+ * can be put back by hand (Plugin Registration or the step editor). Changes cannot be undone from the tool.
+ */
+export function exportBackup(steps: StepInfo[], environment: string, savedAt: Date, s: Strings): Uint8Array {
+    return buildWorkbook([
+        {
+            name: s.sheetBackup,
+            headers: [s.colEnvironment, s.colSavedAt],
+            rows: [[environment, savedAt.toISOString()]],
+            widths: [70, 26],
+        },
+        {
+            name: s.sheetSteps,
+            headers: [
+                s.colStepId,
+                s.colStep,
+                s.colDescription,
+                s.colState,
+                s.colMessage,
+                s.colTable,
+                s.colStage,
+                s.colMode,
+                s.colRank,
+                s.colFiltering,
+                s.colDeleteJob,
+                s.colEndpoint,
+                s.colTarget,
+            ],
+            rows: steps.map((x) => [
+                x.id,
+                x.name,
+                x.description,
+                x.enabled ? s.enabled : s.disabled,
+                x.message,
+                x.table ?? s.allTables,
+                s.stageLabel(x.stage),
+                s.modeLabel(x.mode),
+                x.rank,
+                x.filteringAttributes,
+                x.deleteJobOnSuccess,
+                x.endpointName,
+                x.targetPath,
+            ]),
+            widths: [38, 50, 40, 11, 12, 22, 15, 14, 7, 44, 10, 32, 30],
+        },
+        {
+            name: s.sheetImages,
+            headers: [s.colStepId, s.colStep, s.colImageId, s.colType, s.colAlias, s.colName, s.colColumns, s.colMessageProperty],
+            rows: steps.flatMap((x) =>
+                x.images.map((i) => [x.id, x.name, i.id, s.imageTypeLabel(i.imageType), i.alias, i.name, allColumns(i) ? s.allColumns : i.attributes, i.messageProperty]),
+            ),
+            widths: [38, 50, 38, 11, 20, 24, 70, 18],
+        },
+    ]);
 }
 
 export function exportModel(model: ExplorerModel, s: Strings): Uint8Array {

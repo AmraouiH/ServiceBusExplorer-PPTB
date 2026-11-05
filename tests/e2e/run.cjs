@@ -8,6 +8,15 @@ const path = require('path');
 const fs = require('fs');
 const { execSync } = require('child_process');
 const { chromium } = require('playwright-core');
+const { strFromU8, unzipSync } = require('fflate');
+
+/** Sheet names and the text of each sheet of a workbook saved through the mock ToolBox. */
+function readWorkbook(file) {
+    const zip = unzipSync(Uint8Array.from(file.data));
+    const names = [...strFromU8(zip['xl/workbook.xml']).matchAll(/<sheet name="([^"]*)"/g)].map((m) => m[1]);
+    const sheets = names.map((_n, i) => strFromU8(zip[`xl/worksheets/sheet${i + 1}.xml`]));
+    return { names, sheets };
+}
 
 const root = path.resolve(__dirname, '..', '..');
 const mockPath = path.join(__dirname, 'mockHost.js');
@@ -168,7 +177,8 @@ function assertEqual(actual, expected, message) {
 async function shot(page, name) {
     if (!screensDir) return;
     fs.mkdirSync(screensDir, { recursive: true });
-    await page.waitForTimeout(150);
+    // Fluent dialogs fade in and out: wait for the end of the animation.
+    await page.waitForTimeout(500);
     await page.screenshot({ path: path.join(screensDir, `${name}.png`) });
 }
 
@@ -459,6 +469,21 @@ async function run() {
             await page.locator('.sb-card button', { hasText: /^Disable$/ }).click();
             const text = await dialog(page).innerText();
             assert(text.includes('2 step(s) will stop sending messages') && text.includes('Update of account') && text.includes('Update of invoice'), 'confirmation lists the steps');
+            assert(text.includes('Environment: Contoso Dev (https://contoso.crm4.dynamics.com)'), 'target environment named: ' + text);
+            assert(text.includes('can’t be undone from this tool'), 'no-undo notice');
+            // Backup of the steps as they are, before anything is written
+            await dialog(page).locator('.sb-save-backup').click();
+            await page.waitForSelector('.sb-backup-status');
+            assert((await page.locator('.sb-backup-status').innerText()).includes('Backup saved: C:\\Users\\me\\Documents\\ServiceBus Explorer backup '), 'backup path shown');
+            const backupFile = (await page.evaluate(() => window.__mock.savedFiles))[0];
+            assert(/^ServiceBus Explorer backup \d{4}-\d\d-\d\d \d\d-\d\d\.xlsx$/.test(backupFile.name), 'backup name ' + backupFile.name);
+            const backup = readWorkbook(backupFile);
+            assertEqual(backup.names, ['Backup', 'Steps', 'Images'], 'backup sheets');
+            assert(backup.sheets[0].includes('Contoso Dev (https://contoso.crm4.dynamics.com)'), 'environment in the backup');
+            assert(backup.sheets[1].includes('Update of account') && backup.sheets[1].includes('Update of invoice') && !backup.sheets[1].includes('Create of account'), 'only the steps that change');
+            assert(backup.sheets[2].includes('PostImage') && backup.sheets[2].includes('PreImage'), 'their images, with ids');
+            assertEqual((await calls(page, 'update')).length, 0, 'the backup writes nothing');
+            await shot(page, '12-bulk-confirmation');
             await dialog(page).locator('button', { hasText: 'Cancel' }).click();
             assertEqual((await calls(page, 'update')).length, 0, 'cancel writes nothing');
             await page.locator('.sb-card button', { hasText: /^Disable$/ }).click();
@@ -509,6 +534,9 @@ async function run() {
             await page.locator('.sb-editor-save').click();
             const review = await page.locator('.sb-review-dialog').innerText();
             assert(/Rank : 1\s+→\s+5/.test(review) && review.includes('Filtering columns'), 'review lines: ' + review);
+            assert(review.includes('Environment: Contoso Dev (https://contoso.crm4.dynamics.com)') && review.includes('can’t be undone from this tool'), 'environment and no-undo notice');
+            assert(!review.includes('will be deleted'), 'no image deleted, no deletion warning');
+            assert(await page.locator('.sb-review-dialog .sb-save-backup').count(), 'backup offered');
             await page.locator('.sb-review-save').click();
             await idle(page);
             await idle(page);
@@ -537,6 +565,8 @@ async function run() {
             await page.locator('.sb-editor-save').click();
             const review = await page.locator('.sb-review-dialog').innerText();
             assert(review.includes('Image added: Extra') && review.includes('Image removed: PostImage') && review.includes('Image changed'), 'review: ' + review);
+            assert(review.includes('1 image(s) will be deleted from Dataverse'), 'deletion warning: ' + review);
+            await shot(page, '11-review-with-deletion');
             await page.locator('.sb-review-save').click();
             await idle(page);
             await idle(page);
@@ -792,6 +822,10 @@ async function run() {
             assert(await page.locator('.sb-theme-dark').count(), 'dark class');
             const background = await page.evaluate(() => getComputedStyle(document.querySelector('.sb-card')).backgroundColor);
             assert(background !== 'rgb(255, 255, 255)', 'dark cards, got ' + background);
+            // Marketplace policy: one external link (the author), the tool icon is a vector that follows the theme
+            assertEqual(await page.locator('.sb-header button', { hasText: 'Donate' }).count(), 0, 'no donation link in the tool');
+            assertEqual(await page.locator('.sb-header button', { hasText: 'Hamza AMRAOUI' }).count(), 1, 'one author link');
+            assertEqual([await page.locator('.sb-header svg.sb-logo').count(), await page.locator('.sb-header img').count()], [1, 0], 'vector icon, no picture');
             await page.locator('.sb-header button', { hasText: 'Help' }).click();
             assert((await page.locator('.sb-text-viewer').innerText()).includes('6. MESSAGES'), 'help text');
             await page.locator('.sb-text-viewer button', { hasText: 'Close' }).last().click();

@@ -90,7 +90,8 @@ body {
 .sb-logo {
     width: 32px;
     height: 32px;
-    border-radius: 50%;
+    flex: none;
+    color: #fff;
 }
 
 .sb-title {
@@ -148,10 +149,6 @@ body {
 .sb-load.fui-Button:hover {
     background: #106ebe;
     color: #fff;
-}
-
-.sb-heart {
-    color: #ff6b81;
 }
 
 /* Tabs bar */
@@ -748,6 +745,40 @@ body {
     overflow: auto;
 }
 
+/* Before a write: environment, no-undo notice, backup */
+
+.sb-write-safety {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 12px;
+    border-left: 3px solid var(--colorPaletteMarigoldBorderActive);
+    border-radius: 4px;
+    background: var(--colorNeutralBackground2);
+}
+
+.sb-no-undo {
+    font-size: 13px;
+    color: var(--colorNeutralForeground2);
+}
+
+.sb-backup-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.sb-backup-status {
+    font-size: 12px;
+    color: var(--colorPaletteGreenForeground1);
+    word-break: break-all;
+}
+
+.sb-backup-status.sb-backup-error {
+    color: var(--colorPaletteRedForeground1);
+}
+
 .sb-device-code {
     font-family: Consolas, 'Cascadia Mono', monospace;
     font-size: 28px;
@@ -797,7 +828,7 @@ body {
 .sb-busy-logo {
     width: 44px;
     height: 44px;
-    border-radius: 50%;
+    color: var(--colorBrandForeground1);
     animation: sb-pulse 1.6s ease-in-out infinite;
 }
 

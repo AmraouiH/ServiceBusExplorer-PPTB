@@ -242,7 +242,7 @@
         },
         fileSystem: {
             saveFile: async (name, content) => {
-                savedFiles.push({ name, bytes: Array.from(content.slice(0, 4)), length: content.length });
+                savedFiles.push({ name, bytes: Array.from(content.slice(0, 4)), length: content.length, data: Array.from(content) });
                 return `C:\\Users\\me\\Documents\\${name}`;
             },
         },
